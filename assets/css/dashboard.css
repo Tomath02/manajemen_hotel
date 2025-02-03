@@ -1,0 +1,84 @@
+/* Reset basic styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+}
+
+/* Body styles */
+body {
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+    text-align: center;
+}
+
+
+div {
+    background: white;
+    padding: 20px;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Navigation styles */
+nav {
+    background-color: #0055a5; /* Lighter blue for the navigation */
+    padding: 10px; /* Padding inside the nav */
+    text-align: center; /* Centered navigation links */
+}
+
+nav a {
+    color: white; /* White text for links */
+    text-decoration: none; /* No underline for links */
+    padding: 10px 20px; /* Padding around links */
+    display: inline-block; /* Inline block for spacing */
+}
+
+nav a:hover {
+    background-color: #0077cc; /* Darker blue on hover */
+}
+
+p {
+    font-size: 18px;
+    color: #333;
+    margin: 10px 0;
+}
+
+h3 {
+    color: #003366;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+ul li {
+    margin: 10px 0;
+}
+
+ul li a {
+    text-decoration: none;
+    background-color: #0055a5;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: inline-block;
+    transition: background 0.3s;
+}
+
+ul li a:hover {
+    background-color: #0077cc;
+}
+
+@media (max-width: 768px) {
+    div {
+        width: 90%;
+    }
+}
