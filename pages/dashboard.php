@@ -88,6 +88,8 @@ $total_employees = $result->fetch_assoc()['total'];
                         <p><strong>Total Pembayaran:</strong> <?= $total_payments; ?></p>
                         <p><strong>Total Layanan Tambahan:</strong> <?= $total_services; ?></p>
                         <p><strong>Total Pegawai:</strong> <?= $total_employees; ?></p>
+                        <!-- Tombol ke Report -->
+                        <a href="report.php" class="btn btn-primary mt-3">Lihat Laporan</a>
                     </div>
                 </div>
             </div>

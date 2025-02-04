@@ -17,7 +17,7 @@ $stmt->bind_param("ii", $selected_year, $selected_month);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Panggil function `get_monthly_revenue` dengan dua argumen (tahun & bulan)
+// Ambil total pendapatan dari function `get_monthly_revenue`
 $query_total = "SELECT get_monthly_revenue(?, ?) AS total";
 $stmt_total = $conn->prepare($query_total);
 $stmt_total->bind_param("ii", $selected_year, $selected_month);
@@ -33,70 +33,101 @@ $total_revenue = $result_total->fetch_assoc()['total'] ?? 0;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laporan Transaksi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
 <body>
-    <h2>Laporan Transaksi Bulanan</h2>
+    <div class="container mt-4">
+        <h2 class="text-center text-primary">Laporan Transaksi Bulanan</h2>
 
-    <!-- Form Pilih Bulan & Tahun -->
-    <form method="GET">
-        <label>Pilih Tahun:</label>
-        <select name="year">
-            <?php for ($y = date('Y') - 5; $y <= date('Y'); $y++) { ?>
-                <option value="<?= $y; ?>" <?= ($y == $selected_year) ? 'selected' : ''; ?>><?= $y; ?></option>
-            <?php } ?>
-        </select>
+        <!-- Form Pilih Bulan & Tahun -->
+        <div class="card p-3 mb-4">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Pilih Tahun:</label>
+                    <select name="year" class="form-select">
+                        <?php for ($y = date('Y') - 5; $y <= date('Y'); $y++) { ?>
+                            <option value="<?= $y; ?>" <?= ($y == $selected_year) ? 'selected' : ''; ?>><?= $y; ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
 
-        <label>Pilih Bulan:</label>
-        <select name="month">
-            <?php for ($i = 1; $i <= 12; $i++) { ?>
-                <option value="<?= $i; ?>" <?= ($i == $selected_month) ? 'selected' : ''; ?>>
-                    <?= date("F", mktime(0, 0, 0, $i, 1)); ?>
-                </option>
-            <?php } ?>
-        </select>
+                <div class="col-md-4">
+                    <label class="form-label">Pilih Bulan:</label>
+                    <select name="month" class="form-select">
+                        <?php for ($i = 1; $i <= 12; $i++) { ?>
+                            <option value="<?= $i; ?>" <?= ($i == $selected_month) ? 'selected' : ''; ?>>
+                                <?= date("F", mktime(0, 0, 0, $i, 1)); ?>
+                            </option>
+                        <?php } ?>
+                    </select>
+                </div>
 
-        <button type="submit">Tampilkan</button>
-    </form>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Tampilkan</button>
+                </div>
+            </form>
+        </div>
 
-    <!-- Tabel Transaksi -->
-    <table border="1" cellpadding="10" cellspacing="0">
-        <thead>
-            <tr>
-                <th>ID Pembayaran</th>
-                <th>ID Reservasi</th>
-                <th>Nama Tamu</th>
-                <th>Jumlah (Rp)</th>
-                <th>Tanggal Pembayaran</th>
-                <th>Metode</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php while ($row = $result->fetch_assoc()) { ?>
-                <tr>
-                    <td><?= $row['payment_id']; ?></td>
-                    <td><?= $row['reservation_id']; ?></td>
-                    <td><?= $row['guest_name']; ?></td>
-                    <td><?= number_format($row['amount'], 2, ',', '.'); ?></td>
-                    <td><?= date('d M Y', strtotime($row['payment_date'])); ?></td>
-                    <td><?= $row['payment_method']; ?></td>
-                    <td><?= $row['status']; ?></td>
-                </tr>
-            <?php } ?>
-        </tbody>
-    </table>
+        <!-- Tabel Transaksi -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped text-center">
+                <thead class="table-primary">
+                    <tr>
+                        <th>ID Pembayaran</th>
+                        <th>ID Reservasi</th>
+                        <th>Nama Tamu</th>
+                        <th>Jumlah (Rp)</th>
+                        <th>Tanggal Pembayaran</th>
+                        <th>Metode</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = $result->fetch_assoc()) { ?>
+                        <tr>
+                            <td><?= $row['payment_id']; ?></td>
+                            <td><?= $row['reservation_id']; ?></td>
+                            <td><?= $row['guest_name']; ?></td>
+                            <td><?= number_format($row['amount'], 2, ',', '.'); ?></td>
+                            <td><?= date('d M Y', strtotime($row['payment_date'])); ?></td>
+                            <td><?= $row['payment_method']; ?></td>
+                            <td>
+                                <span class="badge bg-<?= ($row['status'] == 'Paid') ? 'success' : 'warning'; ?>">
+                                    <?= $row['status']; ?>
+                                </span>
+                            </td>
+                        </tr>
+                    <?php } ?>
+                </tbody>
+            </table>
+        </div>
 
-    <!-- Total Pendapatan -->
-    <h3>Total Pendapatan Bulan <?= date("F", mktime(0, 0, 0, $selected_month, 1)); ?> <?= $selected_year; ?>: Rp <?= number_format($total_revenue, 2, ',', '.'); ?></h3>
+        <!-- Total Pendapatan -->
+        <div class="alert alert-info text-center mt-4">
+            <h4>Total Pendapatan Bulan <?= date("F", mktime(0, 0, 0, $selected_month, 1)); ?> <?= $selected_year; ?>:</h4>
+            <h3 class="fw-bold">Rp <?= number_format($total_revenue, 2, ',', '.'); ?></h3>
+        </div>
 
-    <form method="GET" action="print_report.php" target="_blank">
-        <input type="hidden" name="year" value="<?= $selected_year; ?>">
-        <input type="hidden" name="month" value="<?= $selected_month; ?>">
-        <button type="submit">Cetak PDF</button>
-    </form>
+        <!-- Tombol Cetak PDF & Kembali -->
+        <div class="d-flex justify-content-center gap-3">
+            <form method="GET" action="print_report.php" target="_blank">
+                <input type="hidden" name="year" value="<?= $selected_year; ?>">
+                <input type="hidden" name="month" value="<?= $selected_month; ?>">
+                <button type="submit" class="btn btn-danger">
+                    <i class="bi bi-file-earmark-pdf"></i> Cetak PDF
+                </button>
+            </form>
 
+            <!-- Tombol Kembali ke Dashboard -->
+            <a href="dashboard.php" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Kembali
+            </a>
+        </div>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
