@@ -1,7 +1,7 @@
 <?php
 session_start();
 include '../config.php';
-include '../templates/header.php';
+// include '../templates/header.php';
 
 // Ambil data reservasi dari database
 $query = "SELECT r.reservation_id, g.name AS guest_name, rm.room_number, r.check_in_date, r.check_out_date, r.total_price, r.status 
@@ -113,17 +113,17 @@ $result = $conn->query($query);
         const openBtn = document.getElementById("toggleSidebar");
         const closeBtn = document.getElementById("closeSidebar");
 
-        openBtn.addEventListener("click", function () {
+        openBtn.addEventListener("click", function() {
             sidebar.classList.add("sidebar-show");
             overlay.classList.add("overlay-active");
         });
 
-        closeBtn.addEventListener("click", function () {
+        closeBtn.addEventListener("click", function() {
             sidebar.classList.remove("sidebar-show");
             overlay.classList.remove("overlay-active");
         });
 
-        overlay.addEventListener("click", function () {
+        overlay.addEventListener("click", function() {
             sidebar.classList.remove("sidebar-show");
             overlay.classList.remove("overlay-active");
         });

@@ -45,13 +45,13 @@ if (isset($_GET['payment_id'])) {
     <div id="sidebar" class="sidebar">
         <button class="btn btn-light close-btn" id="closeSidebar">←</button>
         <h5 class="text-center text-light mt-3">Menu</h5>
-        <a href="dashboard.php">Dashboard</a>
-        <a href="guests.php">Manajemen Tamu</a>
-        <a href="rooms.php">Manajemen Kamar</a>
-        <a href="reservations.php">Manajemen Reservasi</a>
-        <a href="payments.php" class="active">Manajemen Pembayaran</a>
-        <a href="services.php">Manajemen Layanan</a>
-        <a href="employees.php">Manajemen Pegawai</a>
+        <a href="../pages/dashboard.php">Dashboard</a>
+        <a href="../pages/guests.php" class="active">Manajemen Tamu</a>
+        <a href="../pages/rooms.php">Manajemen Kamar</a>
+        <a href="../pages/reservations.php">Manajemen Reservasi</a>
+        <a href="../pages/payments.php">Manajemen Pembayaran</a>
+        <a href="../pages/services.php">Manajemen Layanan</a>
+        <a href="../pages/employees.php">Manajemen Pegawai</a>
         <a href="../logout.php" class="text-danger">Logout</a>
     </div>
 
@@ -97,17 +97,17 @@ if (isset($_GET['payment_id'])) {
         const openBtn = document.getElementById("toggleSidebar");
         const closeBtn = document.getElementById("closeSidebar");
 
-        openBtn.addEventListener("click", function () {
+        openBtn.addEventListener("click", function() {
             sidebar.classList.add("sidebar-show");
             overlay.classList.add("overlay-active");
         });
 
-        closeBtn.addEventListener("click", function () {
+        closeBtn.addEventListener("click", function() {
             sidebar.classList.remove("sidebar-show");
             overlay.classList.remove("overlay-active");
         });
 
-        overlay.addEventListener("click", function () {
+        overlay.addEventListener("click", function() {
             sidebar.classList.remove("sidebar-show");
             overlay.classList.remove("overlay-active");
         });

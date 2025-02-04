@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 include '../config.php';
-include '../templates/header.php';
+// include '../templates/header.php';
 
 // Hitung total tamu
 $result = $conn->query("SELECT COUNT(*) AS total FROM guests");
@@ -121,17 +121,17 @@ $total_employees = $result->fetch_assoc()['total'];
         const openBtn = document.getElementById("toggleSidebar");
         const closeBtn = document.getElementById("closeSidebar");
 
-        openBtn.addEventListener("click", function () {
+        openBtn.addEventListener("click", function() {
             sidebar.classList.add("sidebar-show");
             overlay.classList.add("overlay-active");
         });
 
-        closeBtn.addEventListener("click", function () {
+        closeBtn.addEventListener("click", function() {
             sidebar.classList.remove("sidebar-show");
             overlay.classList.remove("overlay-active");
         });
 
-        overlay.addEventListener("click", function () {
+        overlay.addEventListener("click", function() {
             sidebar.classList.remove("sidebar-show");
             overlay.classList.remove("overlay-active");
         });
