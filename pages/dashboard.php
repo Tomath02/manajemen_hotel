@@ -36,6 +36,67 @@ $total_services = $result->fetch_assoc()['total'];
 // Hitung total pegawai
 $result = $conn->query("SELECT COUNT(*) AS total FROM employees");
 $total_employees = $result->fetch_assoc()['total'];
+
+
+// Ambil data pendapatan dan jumlah reservasi per bulan
+$query1 = "SELECT 
+              YEAR(r.check_in_date) AS year, 
+              MONTH(r.check_in_date) AS month, 
+              COUNT(r.reservation_id) AS total_reservations, 
+              COALESCE(SUM(p.amount), 0) AS total_revenue
+           FROM reservations r
+           LEFT JOIN payments p ON r.reservation_id = p.reservation_id AND p.status = 'Paid'
+           GROUP BY YEAR(r.check_in_date), MONTH(r.check_in_date)
+           ORDER BY YEAR(r.check_in_date), MONTH(r.check_in_date)";
+$result1 = $conn->query($query1);
+
+$months = [];
+$reservations = [];
+$revenues = [];
+
+while ($row = $result1->fetch_assoc()) {
+    $months[] = date("F Y", mktime(0, 0, 0, $row['month'], 1, $row['year']));
+    $reservations[] = $row['total_reservations'];
+    $revenues[] = $row['total_revenue'];
+}
+
+$months_json = json_encode($months);
+$reservations_json = json_encode($reservations);
+$revenues_json = json_encode($revenues);
+
+// Ambil data tipe kamar favorit
+$query2 = "SELECT rm.type, COUNT(r.room_id) AS total_bookings 
+           FROM rooms rm 
+           LEFT JOIN reservations r ON rm.room_id = r.room_id 
+           GROUP BY rm.type 
+           ORDER BY total_bookings DESC";
+$result2 = $conn->query($query2);
+
+$room_types = [];
+$room_bookings = [];
+
+while ($row = $result2->fetch_assoc()) {
+    $room_types[] = $row['type'];
+    $room_bookings[] = $row['total_bookings'];
+}
+
+$room_types_json = json_encode($room_types);
+$room_bookings_json = json_encode($room_bookings);
+
+// Ambil data dari view untuk notifikasi
+$sql_occupied_rooms = "SELECT * FROM view_occupied_rooms";
+$result_occupied_rooms = $conn->query($sql_occupied_rooms);
+
+$sql_unpaid_reservations = "SELECT * FROM view_unpaid_reservations";
+$result_unpaid_reservations = $conn->query($sql_unpaid_reservations);
+
+// Ambil tingkat hunian kamar
+$query3 = "SELECT (COUNT(DISTINCT room_id) / (SELECT COUNT(*) FROM rooms)) * 100 AS occupancy_rate 
+           FROM reservations 
+           WHERE status IN ('Confirmed', 'Checked-in')";
+$result3 = $conn->query($query3);
+$occupancy_rate = $result3->fetch_assoc()['occupancy_rate'] ?? 0;
+
 ?>
 
 <!DOCTYPE html>
@@ -47,6 +108,45 @@ $total_employees = $result->fetch_assoc()['total'];
     <title>Dashboard - Manajemen Hotel</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="../assets/css/style.css">
+    <style>
+        .chart-container {
+            width: 80%;
+            /* Sesuaikan lebar */
+            max-width: 600px;
+            /* Batasi ukuran maksimal */
+            margin: 20px auto;
+            /* Pusatkan grafik */
+        }
+
+        .notifications {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 5px solid #ff9800;
+            color: #856404;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border-left: 5px solid #dc3545;
+            color: #721c24;
+        }
+
+        .alert ul {
+            padding-left: 20px;
+        }
+    </style>
 </head>
 
 <body>
@@ -115,6 +215,56 @@ $total_employees = $result->fetch_assoc()['total'];
         </div>
     </div>
 
+    <div class="notifications">
+        <h3>🚨 Notifikasi</h3>
+
+        <?php if ($result_occupied_rooms->num_rows > 0) : ?>
+            <div class="alert alert-warning">
+                <strong>⚠️ Kamar yang sudah ditempati lebih dari 7 hari:</strong>
+                <ul>
+                    <?php while ($row = $result_occupied_rooms->fetch_assoc()) : ?>
+                        <li>Kamar <?= htmlspecialchars($row['room_number']); ?> - Check-in sejak <?= htmlspecialchars($row['check_in_date']); ?></li>
+                    <?php endwhile; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($result_unpaid_reservations->num_rows > 0) : ?>
+            <div class="alert alert-danger">
+                <strong>❗ Reservasi belum dibayar setelah check-in:</strong>
+                <ul>
+                    <?php while ($row = $result_unpaid_reservations->fetch_assoc()) : ?>
+                        <li>Reservasi ID <?= htmlspecialchars($row['reservation_id']); ?> oleh Tamu ID <?= htmlspecialchars($row['guest_id']); ?> - Check-in <?= htmlspecialchars($row['check_in_date']); ?></li>
+                    <?php endwhile; ?>
+                </ul>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($result_occupied_rooms->num_rows == 0 && $result_unpaid_reservations->num_rows == 0) : ?>
+            <p>Tidak ada notifikasi saat ini. 🎉</p>
+        <?php endif; ?>
+    </div>
+
+
+    <h3>📊 Analisis Tren Pendapatan dan Pemesanan</h3>
+    <div class="chart-container">
+        <canvas id="revenueChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <canvas id="reservationChart"></canvas>
+    </div>
+
+    <h3>🏨 Analisis Hunian Kamar</h3>
+    <div class="chart-container">
+        <canvas id="roomTypeChart"></canvas>
+    </div>
+    <div class="chart-container">
+        <h4 style="text-align: center;">Tingkat Hunian Kamar</h4>
+        <canvas id="occupancyChart"></canvas>
+    </div>
+
+
+
     <!-- JavaScript untuk Sidebar -->
     <script>
         const sidebar = document.getElementById("sidebar");
@@ -136,6 +286,93 @@ $total_employees = $result->fetch_assoc()['total'];
         overlay.addEventListener("click", function() {
             sidebar.classList.remove("sidebar-show");
             overlay.classList.remove("overlay-active");
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Grafik Pendapatan per Bulan
+        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+        new Chart(revenueCtx, {
+            type: 'bar',
+            data: {
+                labels: <?= $months_json; ?>,
+                datasets: [{
+                    label: 'Pendapatan (Rp)',
+                    data: <?= $revenues_json; ?>,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Grafik Jumlah Pemesanan per Bulan
+        const reservationCtx = document.getElementById('reservationChart').getContext('2d');
+        new Chart(reservationCtx, {
+            type: 'line',
+            data: {
+                labels: <?= $months_json; ?>,
+                datasets: [{
+                    label: 'Jumlah Pemesanan',
+                    data: <?= $reservations_json; ?>,
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Grafik Tipe Kamar Favorit
+        const roomTypeCtx = document.getElementById('roomTypeChart').getContext('2d');
+        new Chart(roomTypeCtx, {
+            type: 'pie',
+            data: {
+                labels: <?= $room_types_json; ?>,
+                datasets: [{
+                    label: 'Jumlah Pemesanan',
+                    data: <?= $room_bookings_json; ?>,
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true
+            }
+        });
+
+        // Grafik Tingkat Hunian Kamar
+        const occupancyCtx = document.getElementById('occupancyChart').getContext('2d');
+        new Chart(occupancyCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Terisi', 'Kosong'],
+                datasets: [{
+                    data: [<?= $occupancy_rate; ?>, 100 - <?= $occupancy_rate; ?>],
+                    backgroundColor: ['#4CAF50', '#E0E0E0']
+                }]
+            },
+            options: {
+                responsive: true
+            }
         });
     </script>
 

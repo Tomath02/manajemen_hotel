@@ -28,7 +28,7 @@ if (isset($_GET['reservation_id'])) {
     $guests = $conn->query("SELECT guest_id, name FROM guests");
 
     // Ambil daftar kamar
-    $rooms = $conn->query("SELECT room_id, room_number FROM rooms WHERE status = 'Available'");
+    $rooms = $conn->query("SELECT room_id, room_number FROM rooms");
 
     $stmt->close();
 } else {
@@ -97,7 +97,7 @@ if (isset($_GET['reservation_id'])) {
                 <div class="mb-3">
                     <label for="room_id" class="form-label">Kamar:</label>
                     <select name="room_id" class="form-select" required>
-                        <option value="">Pilih Kamar</option>
+                        <option value="<?= $reservation['room_id']; ?>">Pilih Kamar</option>
                         <?php while ($room = $rooms->fetch_assoc()): ?>
                             <option value="<?= $room['room_id']; ?>" <?= $room['room_id'] == $reservation['room_id'] ? 'selected' : ''; ?>>
                                 <?= $room['room_number']; ?>
